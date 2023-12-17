@@ -1,0 +1,111 @@
+---
+
+doug:
+  sensor_type:
+    natural_key:
+    - name
+    unique_key:
+    - name
+    table_create: |
+        CREATE TABLE IF NOT EXISTS `sensor_type` (
+          `id`                      int(11) NOT NULL AUTO_INCREMENT,
+          `name`               VARCHAR(255) NOT NULL, /* dot separated type that matches worker class */
+          `unit`                    VARCHAR(255) NOT NULL, /* sensor units when read */
+          `reading_type`            VARCHAR(255) NOT NULL, /* int, str, float, etc */
+
+          PRIMARY KEY (`id`),
+          UNIQUE KEY  `uk_doug_sensor_type_natural_key` (`type_name`),
+        ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8
+    insert: |
+      INSERT INTO doug.sensor_type
+        SELECT
+          COALESCE({id})            AS id,
+
+    defaults: {}
+    foreign_keys: {}
+
+  #----------------------------------------------------------------
+  # node_type:  Name for the physical hardware on which the
+  #             logical node resides (e.g. pi_zero, pi_3, etc)
+  #----------------------------------------------------------------
+  node:
+    natural_key:  []
+    unique_key:   []
+    table_create: |
+      CREATE TABLE IF NOT EXISTS `node`:
+        `id`                    int(11) NOT NULL AUTO_INCREMENT,
+        `address`               VARCHAR(255) NOT NULL,
+        `type`                  VARCHAR(255) NOT NULL,
+
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_doug_node_nk` (`address`)
+        ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8
+    insert: |
+      INSERT INTO doug.node ...
+    
+  #----------------------------------------------------------------
+  # node_address:   The node address is the logical address of the
+  #                 physical node on which the sensor resides.
+  #                 This is where messages to interact with the
+  #                 sensor are sent
+  # sensor_address: This is a logcal address that indicates the
+  #                 location where the sensor measurement
+  #                 happens.
+  # The above 2 often refer to the same physical location, but
+  # may differ.  For example, if the Ecobee thermsostat sensors
+  # are read, the physical node can be anywhere because the
+  # the read() uses a REST API call to Ecobee but the sensor
+  # from which the data originates can be located at various
+  # points throughout the house.
+  #----------------------------------------------------------------
+  sensor:
+    natural_key:
+    - address
+    - sensor_type.name
+    unique_key:
+    - address
+    - sensor_type_id
+    table_create: |
+        CREATE TABLE IF NOT EXISTS `sensor` (
+          `id`                      int(11) NOT NULL AUTO_INCREMENT,
+          `sensor_type_id`          int(11) NOT NULL,
+          `node_id`                 int(11) NOT NULL,
+          `sensor_address`          VARCHAR(255) NOT NULL,
+          `schedule`                VARCHAR(255) NOT NULL,
+          `cfg`                     VARCHAR(255) NOT NULL, /* sensor type specific cfg as JSON string */
+
+          PRIMARY KEY (`id`),
+          UNIQUE KEY  `uk_doug_sensor_natural_key` (`address`, `sensor_type_id`),
+        ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8
+    insert: |
+      INSERT INTO doug.sensor_type
+        SELECT
+          COALESCE({id})            AS id,
+
+    foreign_keys: {}
+
+  reading:
+    natural_key:
+    - timestamp
+    - sensor.sensor_type.name
+    unique_key:
+    - timestamp
+    - sensor_id
+    table_create: |
+        CREATE TABLE IF NOT EXISTS `reading` (
+          `id`                      int(11) NOT NULL AUTO_INCREMENT,
+          `sensor_id`               int(11) NOT NULL,
+          `timestamp`               VARCHAR(255) NOT NULL, /* dot separated location */
+          `value`                   VARCHAR(255) NOT NULL,
+
+          PRIMARY KEY (`id`),
+          UNIQUE KEY  `uk_doug_reading_natural_key` (`sensor_id`, `timestamp`),
+        ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8
+    insert: |
+      INSERT INTO doug.sensor_type
+        SELECT
+          COALESCE({id})            AS id,
+
+    defaults: {}
+    foreign_keys: {}
+

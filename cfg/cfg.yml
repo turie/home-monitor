@@ -1,0 +1,10 @@
+
+
+# This info is taken from the database and
+# sent, using this format, to the nodes
+# so each one can configure itself
+sensors:
+- address:        ''
+  cfg:            # Sensor type specific cfg
+  schedule:       # format TBD
+  
